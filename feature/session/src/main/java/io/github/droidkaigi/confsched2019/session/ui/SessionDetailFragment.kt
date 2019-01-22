@@ -26,7 +26,9 @@ import com.xwray.groupie.databinding.ViewHolder
 import dagger.Module
 import dagger.Provides
 import io.github.droidkaigi.confsched2019.di.PageScope
+import io.github.droidkaigi.confsched2019.ext.android.Dispatchers
 import io.github.droidkaigi.confsched2019.ext.android.changed
+import io.github.droidkaigi.confsched2019.ext.android.coroutineScope
 import io.github.droidkaigi.confsched2019.model.LoadingState
 import io.github.droidkaigi.confsched2019.model.ServiceSession
 import io.github.droidkaigi.confsched2019.model.SpeechSession
@@ -40,6 +42,8 @@ import io.github.droidkaigi.confsched2019.session.ui.widget.DaggerFragment
 import io.github.droidkaigi.confsched2019.system.actioncreator.ActivityActionCreator
 import io.github.droidkaigi.confsched2019.user.store.UserStore
 import io.github.droidkaigi.confsched2019.util.ProgressTimeLatch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class SessionDetailFragment : DaggerFragment() {
@@ -132,6 +136,7 @@ class SessionDetailFragment : DaggerFragment() {
             // Immediate reflection on view to avoid time lag
             binding.sessionFavorite.setImageResource(
                 if (session.isFavorited) {
+                    blinkDescription()
                     R.drawable.ic_bookmark_border_black_24dp
                 } else {
                     R.drawable.ic_bookmark_black_24dp
@@ -227,8 +232,30 @@ class SessionDetailFragment : DaggerFragment() {
                         }
                     })
                 }
+
+                if (binding.session?.isFavorited == true) blinkDescription()
                 binding.sessionDescription.setText(text, TextView.BufferType.SPANNABLE)
                 binding.sessionDescription.movementMethod = LinkMovementMethod.getInstance()
+            }
+        }
+    }
+
+    private fun blinkDescription() {
+        coroutineScope.launch(Dispatchers.Default) {
+            for (counter in 0..4) {
+                delay(200)
+                if (counter % 2 == 0) {
+                    launch(Dispatchers.Main) {
+                        binding.sessionDescription.visibility = View.INVISIBLE
+                    }
+                } else {
+                    launch(Dispatchers.Main) {
+                        binding.sessionDescription.visibility = View.VISIBLE
+                    }
+                }
+            }
+            launch(Dispatchers.Main) {
+                binding.sessionDescription.visibility = View.VISIBLE
             }
         }
     }
